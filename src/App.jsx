@@ -7,6 +7,7 @@ import Forecast from "./components/Forecast";
 import Theme from "./components/Theme";
 import Loading from "./components/Loading";
 import Error from "./components/Error";
+import AirQuality from "./components/AirQuality";
 import { useWeatherContext } from "./context/Wethercotext";
 import "./App.css";
 
@@ -89,7 +90,7 @@ function App() {
 }
 
 const DynamicContent = () => {
-  const { weather, forecast, loading, error } = useWeatherContext();
+  const { weather, forecast, airQuality, loading, error } = useWeatherContext();
 
   if (loading) {
     return (
@@ -102,7 +103,7 @@ const DynamicContent = () => {
   if (error) {
     return (
       <div className="p-6 bg-white/[0.10] rounded-xl backdrop-blur-md shadow-lg border border-white/[0.15] animate-fade-in">
-        <Error message={error} onDismiss={() => {}} />
+        <Error message={error} onDismiss={() => { }} />
       </div>
     );
   }
@@ -122,13 +123,23 @@ const DynamicContent = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div className="lg:col-span-5">
-        <Card />
+    <div className="flex flex-col gap-6">
+      {/* Top row: Weather Card + Forecast */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-5">
+          <Card />
+        </div>
+        <div className="lg:col-span-7">
+          <Forecast key={forecast.city.id} />
+        </div>
       </div>
-      <div className="lg:col-span-7">
-        <Forecast key={forecast.city.id} />
-      </div>
+
+      {/* Bottom row: AQI — full width */}
+      {airQuality && (
+        <div className="w-full">
+          <AirQuality />
+        </div>
+      )}
     </div>
   );
 };
