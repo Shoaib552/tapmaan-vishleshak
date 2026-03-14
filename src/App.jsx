@@ -8,6 +8,7 @@ import Theme from "./components/Theme";
 import Loading from "./components/Loading";
 import Error from "./components/Error";
 import AirQuality from "./components/AirQuality";
+import WeatherStats from "./components/WeatherStats";
 import { useWeatherContext } from "./context/Wethercotext";
 import "./App.css";
 
@@ -212,6 +213,11 @@ const DynamicContent = () => {
           <AirQuality />
         </div>
       )}
+
+      {/* Weather Details panel */}
+      <div className="w-full">
+        <WeatherStats />
+      </div>
     </div>
   );
 };
