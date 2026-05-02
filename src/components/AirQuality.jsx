@@ -74,16 +74,55 @@ const AQI_CONFIG = [
 
 // Pollutant display config
 const POLLUTANTS = [
-  { key: "pm2_5", label: "PM2.5", unit: "µg/m³", safeLimit: 25, color: "#8b5cf6" },
-  { key: "pm10", label: "PM10", unit: "µg/m³", safeLimit: 50, color: "#3b82f6" },
-  { key: "no2", label: "NO₂", unit: "µg/m³", safeLimit: 40, color: "#06b6d4" },
-  { key: "o3", label: "O₃", unit: "µg/m³", safeLimit: 100, color: "#10b981" },
-  { key: "co", label: "CO", unit: "µg/m³", safeLimit: 10000, color: "#f59e0b" },
-  { key: "so2", label: "SO₂", unit: "µg/m³", safeLimit: 20, color: "#ef4444" },
+  { key: "pm2_5", label: "PM2.5", unit: "µg/m³", safeLimit: 25, color: "#8b5cf6", desc: "Fine particles that can enter the bloodstream." },
+  { key: "pm10", label: "PM10", unit: "µg/m³", safeLimit: 50, color: "#3b82f6", desc: "Coarse dust particles that irritate airways." },
+  { key: "no2", label: "NO₂", unit: "µg/m³", safeLimit: 40, color: "#06b6d4", desc: "Traffic exhaust gas that exacerbates asthma." },
+  { key: "o3", label: "O₃", unit: "µg/m³", safeLimit: 100, color: "#10b981", desc: "Ground-level ozone causing respiratory issues." },
+  { key: "co", label: "CO", unit: "µg/m³", safeLimit: 10000, color: "#f59e0b", desc: "Gas that reduces oxygen delivery in the body." },
+  { key: "so2", label: "SO₂", unit: "µg/m³", safeLimit: 20, color: "#ef4444", desc: "Gas from fossil fuels that irritates the lungs." },
 ];
 
+// US EPA AQI calculation for PM2.5 and PM10
+const calculateAQI = (c, breakpoints) => {
+  for (let i = 0; i < breakpoints.length; i++) {
+    const bp = breakpoints[i];
+    if (c >= bp.cLow && c <= bp.cHigh) {
+      return Math.round(((bp.iHigh - bp.iLow) / (bp.cHigh - bp.cLow)) * (c - bp.cLow) + bp.iLow);
+    }
+  }
+  const last = breakpoints[breakpoints.length - 1];
+  if (c > last.cHigh) {
+    return Math.round(((last.iHigh - last.iLow) / (last.cHigh - last.cLow)) * (c - last.cLow) + last.iLow);
+  }
+  return 0;
+};
+
+const getUSAQI = (pm25, pm10) => {
+  const pm25BPs = [
+    { cLow: 0.0, cHigh: 12.0, iLow: 0, iHigh: 50 },
+    { cLow: 12.1, cHigh: 35.4, iLow: 51, iHigh: 100 },
+    { cLow: 35.5, cHigh: 55.4, iLow: 101, iHigh: 150 },
+    { cLow: 55.5, cHigh: 150.4, iLow: 151, iHigh: 200 },
+    { cLow: 150.5, cHigh: 250.4, iLow: 201, iHigh: 300 },
+    { cLow: 250.5, cHigh: 350.4, iLow: 301, iHigh: 400 },
+    { cLow: 350.5, cHigh: 500.4, iLow: 401, iHigh: 500 },
+  ];
+  const pm10BPs = [
+    { cLow: 0, cHigh: 54, iLow: 0, iHigh: 50 },
+    { cLow: 55, cHigh: 154, iLow: 51, iHigh: 100 },
+    { cLow: 155, cHigh: 254, iLow: 101, iHigh: 150 },
+    { cLow: 255, cHigh: 354, iLow: 151, iHigh: 200 },
+    { cLow: 355, cHigh: 424, iLow: 201, iHigh: 300 },
+    { cLow: 425, cHigh: 504, iLow: 301, iHigh: 400 },
+    { cLow: 505, cHigh: 604, iLow: 401, iHigh: 500 },
+  ];
+  const aqi25 = calculateAQI(pm25, pm25BPs);
+  const aqi10 = calculateAQI(pm10, pm10BPs);
+  return Math.max(aqi25, aqi10);
+};
+
 // Mini circular SVG gauge
-const AQIGauge = ({ aqi, ringColor }) => {
+const AQIGauge = ({ aqi, ringColor, usAqi }) => {
   const size = 110;
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
@@ -120,15 +159,15 @@ const AQIGauge = ({ aqi, ringColor }) => {
       </svg>
       {/* AQI number in center */}
       <div className="absolute flex flex-col items-center justify-center">
-        <span className="text-3xl font-extrabold text-white leading-none">{aqi}</span>
-        <span className="text-xs text-white/70 mt-0.5">of 5</span>
+        <span className="text-3xl font-extrabold text-white leading-none">{usAqi !== undefined ? usAqi : aqi}</span>
+        <span className="text-xs text-white/70 mt-0.5">{usAqi !== undefined ? "AQI" : "of 5"}</span>
       </div>
     </div>
   );
 };
 
 // Single pollutant row
-const PollutantRow = ({ label, value, unit, safeLimit, color }) => {
+const PollutantRow = ({ label, value, unit, safeLimit, color, desc }) => {
   const pct = Math.min((value / safeLimit) * 100, 100);
   const barStyle = pct > 80 ? "bg-indigo-400" : pct > 50 ? "bg-sky-400" : "bg-teal-400";
 
@@ -140,6 +179,9 @@ const PollutantRow = ({ label, value, unit, safeLimit, color }) => {
           {value !== undefined ? value.toFixed(1) : "—"} {unit}
         </span>
       </div>
+      <p className="text-[10px] text-white/50 leading-tight -mt-0.5 mb-0.5 font-['DM_Sans']">
+        {desc}
+      </p>
       <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${barStyle}`}
@@ -158,6 +200,7 @@ const AirQuality = memo(() => {
   const aqiData = airQuality.list[0];
   const aqiIndex = aqiData.main.aqi; // 1–5
   const components = aqiData.components;
+  const usAqi = getUSAQI(components.pm2_5 || 0, components.pm10 || 0);
   const config = AQI_CONFIG[aqiIndex - 1];
   const { Icon } = config;
 
@@ -195,7 +238,7 @@ const AirQuality = memo(() => {
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
           {/* Left: Gauge */}
           <div className="flex flex-col items-center gap-3 flex-shrink-0">
-            <AQIGauge aqi={aqiIndex} ringColor={config.ring} />
+            <AQIGauge aqi={aqiIndex} ringColor={config.ring} usAqi={usAqi} />
 
             {/* Health tip */}
             <div
@@ -210,11 +253,11 @@ const AirQuality = memo(() => {
           </div>
 
           {/* Right: Pollutant breakdown */}
-          <div className="flex-1 w-full grid grid-cols-1 gap-3">
+          <div className="flex-1 w-full grid grid-cols-1 gap-2">
             <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-1">
               Pollutant Breakdown
             </p>
-            {POLLUTANTS.map(({ key, label, unit, safeLimit, color }) => (
+            {POLLUTANTS.map(({ key, label, unit, safeLimit, color, desc }) => (
               <PollutantRow
                 key={key}
                 label={label}
@@ -222,6 +265,7 @@ const AirQuality = memo(() => {
                 unit={unit}
                 safeLimit={safeLimit}
                 color={color}
+                desc={desc}
               />
             ))}
           </div>

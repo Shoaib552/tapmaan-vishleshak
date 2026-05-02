@@ -13,8 +13,7 @@ import { useWeatherContext } from "./context/Wethercotext";
 import "./App.css";
 
 function App() {
-  const [audio, setAudio] = useState(null);
-  const [isMuted, setIsMuted] = useState(false);
+  // Removed audio states
 
   useEffect(() => {
     const fontLinks = [
@@ -33,11 +32,7 @@ function App() {
 
     linkElements.forEach((link) => document.head.appendChild(link));
 
-    const newAudio = new Audio("/sounds/tapmaan.mp3");
-    newAudio.play().catch((err) => {
-      console.log("Audio playback failed:", err);
-    });
-    setAudio(newAudio);
+    // Removed audio playback
 
     return () => {
       linkElements.forEach((link) => {
@@ -45,22 +40,11 @@ function App() {
           document.head.removeChild(link);
         }
       });
-      if (newAudio) {
-        newAudio.pause();
-        newAudio.currentTime = 0;
-      }
+      // Removed audio cleanup
     };
   }, []);
 
-  const toggleMute = () => {
-    if (!audio) return;
-    if (isMuted) {
-      audio.play();
-    } else {
-      audio.pause();
-    }
-    setIsMuted(!isMuted);
-  };
+  // Removed toggleMute function
 
   return (
     <WeatherProvider>
@@ -106,13 +90,7 @@ function App() {
           </div>
         </div>
 
-        {/* Simple Audio Button Top-Right */}
-        <button
-          onClick={toggleMute}
-          className="fixed top-4 right-4 z-50 text-white text-2xl"
-        >
-          {isMuted ? "🔇" : "🔊"}
-        </button>
+        {/* Audio Button Removed */}
 
         {/* Stylish Horizontal Footer */}
         <footer className="relative z-10 mt-20 mb-4">
