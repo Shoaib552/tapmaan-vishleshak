@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useWeatherContext } from "../context/Wethercotext";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/translations";
 import Details from "./Details";
 import { Calendar, ChevronRight } from "lucide-react";
 
 const Forecast = () => {
   const { forecast, weather } = useWeatherContext();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [selectedForecast, setSelectedForecast] = useState(null);
 
   useEffect(() => {
@@ -46,7 +50,7 @@ const Forecast = () => {
             <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
           <h3 className="text-lg font-['Playfair_Display'] font-bold text-gray-800 dark:text-white tracking-tight">
-            5-Day Forecast
+            {t.five_day_forecast}
           </h3>
         </div>
 
@@ -108,7 +112,7 @@ const Forecast = () => {
 
                 {isSelected && (
                   <div className="mt-1.5 flex items-center justify-center text-blue-500 dark:text-blue-400 text-xs font-['Inter'] font-medium animate-pulse-slow">
-                    <span>Details</span>
+                    <span>{t.details}</span>
                     <ChevronRight className="h-3 w-3 ml-0.5" />
                   </div>
                 )}
@@ -128,7 +132,7 @@ const Forecast = () => {
       {!selectedForecast && (
         <div className="border border-dashed border-gray-200 dark:border-gray-700/50 rounded-lg p-4 text-center mt-4 animate-fade-in">
           <p className="text-sm text-gray-500 dark:text-gray-400 font-['Inter'] italic">
-            Select a day above to view detailed forecast
+            {t.select_day}
           </p>
         </div>
       )}

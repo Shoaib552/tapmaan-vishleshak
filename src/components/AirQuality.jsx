@@ -1,5 +1,7 @@
 import React, { memo } from "react";
 import { useWeatherContext } from "../context/Wethercotext";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/translations";
 import { Wind, AlertTriangle, CheckCircle, Info, XCircle, AlertCircle } from "lucide-react";
 
 // AQI level config: OpenWeatherMap returns 1-5
@@ -74,12 +76,72 @@ const AQI_CONFIG = [
 
 // Pollutant display config
 const POLLUTANTS = [
-  { key: "pm2_5", label: "PM2.5", unit: "µg/m³", safeLimit: 25, color: "#8b5cf6", desc: "Fine particles that can enter the bloodstream." },
-  { key: "pm10", label: "PM10", unit: "µg/m³", safeLimit: 50, color: "#3b82f6", desc: "Coarse dust particles that irritate airways." },
-  { key: "no2", label: "NO₂", unit: "µg/m³", safeLimit: 40, color: "#06b6d4", desc: "Traffic exhaust gas that exacerbates asthma." },
-  { key: "o3", label: "O₃", unit: "µg/m³", safeLimit: 100, color: "#10b981", desc: "Ground-level ozone causing respiratory issues." },
-  { key: "co", label: "CO", unit: "µg/m³", safeLimit: 10000, color: "#f59e0b", desc: "Gas that reduces oxygen delivery in the body." },
-  { key: "so2", label: "SO₂", unit: "µg/m³", safeLimit: 20, color: "#ef4444", desc: "Gas from fossil fuels that irritates the lungs." },
+  { 
+    key: "pm2_5", 
+    label: "PM2.5", 
+    unit: "µg/m³", 
+    safeLimit: 25, 
+    color: "#8b5cf6", 
+    desc: {
+      en: "Fine particles that can enter the bloodstream.",
+      hi: "महीन कण जो रक्तप्रवाह में प्रवेश कर सकते हैं।"
+    }
+  },
+  { 
+    key: "pm10", 
+    label: "PM10", 
+    unit: "µg/m³", 
+    safeLimit: 50, 
+    color: "#3b82f6", 
+    desc: {
+      en: "Coarse dust particles that irritate airways.",
+      hi: "धूल के मोटे कण जो वायुमार्ग में जलन पैदा करते हैं।"
+    }
+  },
+  { 
+    key: "no2", 
+    label: "NO₂", 
+    unit: "µg/m³", 
+    safeLimit: 40, 
+    color: "#06b6d4", 
+    desc: {
+      en: "Traffic exhaust gas that exacerbates asthma.",
+      hi: "ट्रैफिक निकास गैस जो अस्थमा को बढ़ाती है।"
+    }
+  },
+  { 
+    key: "o3", 
+    label: "O₃", 
+    unit: "µg/m³", 
+    safeLimit: 100, 
+    color: "#10b981", 
+    desc: {
+      en: "Ground-level ozone causing respiratory issues.",
+      hi: "ज़मीनी स्तर का ओज़ोन जो सांस की समस्या पैदा करता है।"
+    }
+  },
+  { 
+    key: "co", 
+    label: "CO", 
+    unit: "µg/m³", 
+    safeLimit: 10000, 
+    color: "#f59e0b", 
+    desc: {
+      en: "Gas that reduces oxygen delivery in the body.",
+      hi: "गैस जो शरीर में ऑक्सीजन की आपूर्ति कम करती है।"
+    }
+  },
+  { 
+    key: "so2", 
+    label: "SO₂", 
+    unit: "µg/m³", 
+    safeLimit: 20, 
+    color: "#ef4444", 
+    desc: {
+      en: "Gas from fossil fuels that irritates the lungs.",
+      hi: "जीवाश्म ईंधन से निकलने वाली गैस जो फेफड़ों को परेशान करती है।"
+    }
+  },
 ];
 
 // US EPA AQI calculation for PM2.5 and PM10
@@ -160,7 +222,7 @@ const AQIGauge = ({ aqi, ringColor, usAqi }) => {
       {/* AQI number in center */}
       <div className="absolute flex flex-col items-center justify-center">
         <span className="text-3xl font-extrabold text-white leading-none">{usAqi !== undefined ? usAqi : aqi}</span>
-        <span className="text-xs text-white/70 mt-0.5">{usAqi !== undefined ? "AQI" : "of 5"}</span>
+        <span className="text-xs text-white/70 mt-0.5">{translations[useLanguage().language].aqi}</span>
       </div>
     </div>
   );
@@ -180,7 +242,7 @@ const PollutantRow = ({ label, value, unit, safeLimit, color, desc }) => {
         </span>
       </div>
       <p className="text-[10px] text-white/50 leading-tight -mt-0.5 mb-0.5 font-['DM_Sans']">
-        {desc}
+        {desc[useLanguage().language]}
       </p>
       <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
         <div
@@ -194,6 +256,8 @@ const PollutantRow = ({ label, value, unit, safeLimit, color, desc }) => {
 
 const AirQuality = memo(() => {
   const { airQuality } = useWeatherContext();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   if (!airQuality || !airQuality.list || airQuality.list.length === 0) return null;
 
@@ -201,7 +265,14 @@ const AirQuality = memo(() => {
   const aqiIndex = aqiData.main.aqi; // 1–5
   const components = aqiData.components;
   const usAqi = getUSAQI(components.pm2_5 || 0, components.pm10 || 0);
-  const config = AQI_CONFIG[aqiIndex - 1];
+  const config = { ...AQI_CONFIG[aqiIndex - 1] };
+  
+  // Translate dynamic content
+  const aqiKeys = ["good", "fair", "moderate", "poor", "very_poor"];
+  const currentKey = aqiKeys[aqiIndex - 1];
+  config.label = t[`aqi_${currentKey}`];
+  config.health = t[`aqi_health_${currentKey}`];
+  
   const { Icon } = config;
 
   return (
@@ -225,7 +296,7 @@ const AirQuality = memo(() => {
             <Wind className={`h-4 w-4 ${config.text}`} />
           </div>
           <h3 className="text-white font-bold text-base font-['Inter'] tracking-wide">
-            Air Quality Index
+            {t.air_quality}
           </h3>
           <span
             className={`ml-auto px-3 py-1 rounded-full text-xs font-bold text-white
@@ -255,7 +326,7 @@ const AirQuality = memo(() => {
           {/* Right: Pollutant breakdown */}
           <div className="flex-1 w-full grid grid-cols-1 gap-2">
             <p className="text-white/50 text-xs font-medium uppercase tracking-widest mb-1">
-              Pollutant Breakdown
+              {t.pollutant_breakdown}
             </p>
             {POLLUTANTS.map(({ key, label, unit, safeLimit, color, desc }) => (
               <PollutantRow
