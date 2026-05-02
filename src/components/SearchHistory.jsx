@@ -1,9 +1,13 @@
 import React from 'react';
 import { useWeatherContext } from '../context/Wethercotext';
+import { useLanguage } from '../context/LanguageContext';
+import { translations } from '../utils/translations';
 import { Clock, X } from 'lucide-react';
 
 const SearchHistory = () => {
   const { searchHistory, getWeather, removeFromHistory } = useWeatherContext();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   if (!searchHistory.length) return null;
 
@@ -14,7 +18,7 @@ const SearchHistory = () => {
           <div className="bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-full group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
             <Clock className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
           </div>
-          <span className="text-sm font-['Inter'] font-medium tracking-tight">Recent searches</span>
+          <span className="text-sm font-['Inter'] font-medium tracking-tight">{t.search_history}</span>
         </div>
       </div>
 

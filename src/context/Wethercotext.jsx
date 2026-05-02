@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLanguage } from './LanguageContext';
 import { addToHistoryHelper } from './weatherHelpers';
 
 const WeatherContext = createContext();
 
 export const WeatherProvider = ({ children }) => {
+  const { language } = useLanguage();
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [airQuality, setAirQuality] = useState(null);
@@ -48,7 +50,7 @@ export const WeatherProvider = ({ children }) => {
     setError(null);
     
     try {
-      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
+      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=${language}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
       
       if (!weatherRes.ok) {
         throw new Error('City not found or weather data unavailable');
@@ -58,7 +60,7 @@ export const WeatherProvider = ({ children }) => {
       setWeather(weatherData);
       addToHistory(city);
       
-      const forecastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
+      const forecastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&lang=${language}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
       
       if (!forecastRes.ok) {
         throw new Error('Forecast data unavailable');

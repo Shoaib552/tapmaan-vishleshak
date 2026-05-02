@@ -1,5 +1,7 @@
 import React, { memo } from "react";
 import { useWeatherContext } from "../context/Wethercotext";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/translations";
 import {
   Eye,
   Gauge,
@@ -55,7 +57,7 @@ const RainProb = ({ forecast }) => {
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      <p className="text-white/50 text-[10px] uppercase tracking-widest mb-1">Next 24h Precipitation</p>
+      <p className="text-white/50 text-[10px] uppercase tracking-widest mb-1">{translations[useLanguage().language].next_24h_precip}</p>
       <div className="flex items-end gap-1 h-10">
         {slots.map((item, i) => {
           const pop = item.pop ?? 0; // 0–1
@@ -102,6 +104,8 @@ const StatPill = ({ icon: Icon, label, value, accent }) => (
 // ── Main Component ──────────────────────────────────────────────────────────
 const WeatherStats = memo(() => {
   const { weather, forecast } = useWeatherContext();
+  const { language } = useLanguage();
+  const t = translations[language];
   if (!weather) return null;
 
   const { main, visibility, wind, clouds } = weather;
@@ -109,31 +113,31 @@ const WeatherStats = memo(() => {
   const feelsDiff = (main.feels_like - main.temp).toFixed(1);
   const feelsLabel =
     parseFloat(feelsDiff) > 0
-      ? `${Math.abs(feelsDiff)}°C warmer`
-      : `${Math.abs(feelsDiff)}°C cooler`;
+      ? `${Math.abs(feelsDiff)}°C ${t.warmer}`
+      : `${Math.abs(feelsDiff)}°C ${t.cooler}`;
 
   const stats = [
     {
       icon: Thermometer,
-      label: "Feels Like",
+      label: t.feels_like,
       value: `${Math.round(main.feels_like)}°C (${feelsLabel})`,
       accent: "bg-blue-500/40",
     },
     {
       icon: Eye,
-      label: "Visibility",
+      label: t.visibility,
       value: `${visKm} km`,
       accent: "bg-indigo-500/40",
     },
     {
       icon: Gauge,
-      label: "Pressure",
+      label: t.pressure,
       value: `${main.pressure} hPa`,
       accent: "bg-violet-500/40",
     },
     {
       icon: Cloud,
-      label: "Cloud Cover",
+      label: t.cloud_cover,
       value: `${clouds?.all ?? 0}%`,
       accent: "bg-sky-500/40",
     },
@@ -156,7 +160,7 @@ const WeatherStats = memo(() => {
             <Droplets className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
           <h3 className="text-white font-bold text-base font-['Inter'] tracking-wide">
-            Weather Details
+            {t.weather_details}
           </h3>
         </div>
 
@@ -172,7 +176,7 @@ const WeatherStats = memo(() => {
           <div className="flex flex-col sm:flex-row lg:flex-col gap-6 lg:gap-4 lg:w-56 items-center">
             {/* Wind compass */}
             <div className="flex flex-col items-center gap-1">
-              <p className="text-white/50 text-[10px] uppercase tracking-widest mb-1">Wind Direction</p>
+              <p className="text-white/50 text-[10px] uppercase tracking-widest mb-1">{t.wind_direction}</p>
               <WindCompass deg={wind?.deg ?? 0} speed={wind?.speed ?? 0} />
             </div>
 

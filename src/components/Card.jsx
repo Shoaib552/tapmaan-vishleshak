@@ -1,5 +1,7 @@
 import React, { useState, memo } from "react";
 import { useWeatherContext } from "../context/Wethercotext";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/translations";
 import Loading from "./Loading";
 import Error from "./Error";
 import Day from "./Day";
@@ -13,9 +15,12 @@ import {
   MapPin,
   Loader,
 } from "lucide-react";
+import Recommendations from "./Recommendations";
 
 const Card = memo(() => {
   const { weather, loading, error, getWeather } = useWeatherContext();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const getCurrentLocationWeather = () => {
@@ -257,7 +262,7 @@ const Card = memo(() => {
             </div>
             <div className="ml-3">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-['DM_Sans']">
-                Humidity
+                {t.humidity}
               </p>
               <p className="text-lg font-semibold text-gray-800 dark:text-white">
                 {humidity}%
@@ -281,7 +286,7 @@ const Card = memo(() => {
             </div>
             <div className="ml-3">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-['DM_Sans']">
-                Wind Speed
+                {t.wind_speed}
               </p>
               <p className="text-lg font-semibold text-gray-800 dark:text-white">
                 {speed} m/s
@@ -305,7 +310,7 @@ const Card = memo(() => {
             </div>
             <div className="ml-3">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-['DM_Sans']">
-                Sunrise
+                {t.sunrise}
               </p>
               <p className="text-lg font-semibold text-gray-800 dark:text-white">
                 {sunriseTime}
@@ -329,7 +334,7 @@ const Card = memo(() => {
             </div>
             <div className="ml-3">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-['DM_Sans']">
-                Sunset
+                {t.sunset}
               </p>
               <p className="text-lg font-semibold text-gray-800 dark:text-white">
                 {sunsetTime}
@@ -337,6 +342,9 @@ const Card = memo(() => {
             </div>
           </div>
         </div>
+      </div>
+      <div className="px-6 pb-6 pt-0">
+        <Recommendations />
       </div>
     </div>
   );

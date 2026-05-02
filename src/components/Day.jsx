@@ -1,7 +1,11 @@
 import React from 'react';
 import { Sun, Sunrise, Sunset, Moon, Clock } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { translations } from '../utils/translations';
 
 const Day = ({ timezone = 0, sunrise, sunset }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
   const now = new Date();
   const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
   const locationTime = new Date(utcTime + (timezone * 1000));
@@ -80,26 +84,77 @@ const Day = ({ timezone = 0, sunrise, sunset }) => {
     hour12: true 
   });
 
+  // Calculate sun position percentage (0 to 100)
+  const totalDayMs = (sunset - sunrise) * 1000;
+  const currentMs = locationTime.getTime() - (sunrise * 1000);
+  const sunPos = Math.max(0, Math.min(100, (currentMs / totalDayMs) * 100));
+  const isDay = locationTime.getTime() > (sunrise * 1000) && locationTime.getTime() < (sunset * 1000);
+
+  const timeNames = {
+    en: {
+      "Early Morning": "Early Morning",
+      "Morning": "Morning",
+      "Afternoon": "Afternoon",
+      "Evening": "Evening",
+      "Night": "Night",
+      "Late Night": "Late Night",
+      "Local Time": "Local Time"
+    },
+    hi: {
+      "Early Morning": "तड़के सुबह",
+      "Morning": "सुबह",
+      "Afternoon": "दोपहर",
+      "Evening": "शाम",
+      "Night": "रात",
+      "Late Night": "देर रात",
+      "Local Time": "स्थानीय समय"
+    }
+  };
+
   return (
-    <div className={`p-3 bg-gradient-to-r ${timeOfDay.color} rounded-lg shadow-sm backdrop-blur-sm
-      border border-white/30 dark:border-gray-700/30 animate-fade-in
-      transition-all duration-500 hover:-translate-y-0.5 hover:shadow-md group`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={`p-2 ${timeOfDay.iconBg} rounded-full 
-            group-hover:scale-110 transition-transform duration-300`}>
-            {timeOfDay.icon}
+    <div className={`p-4 bg-white/[0.08] backdrop-blur-md rounded-xl border border-white/20 animate-fade-in group`}>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 ${timeOfDay.iconBg} rounded-full group-hover:rotate-12 transition-transform duration-500`}>
+              {timeOfDay.icon}
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-white/50 tracking-widest">
+                {timeNames[language]["Local Time"]}
+              </p>
+              <p className="text-lg font-bold text-white font-['DM_Sans']">
+                {localTime}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className={`text-xs font-['Inter'] ${timeOfDay.textColor}`}>Local Time</p>
-            <p className="text-sm font-semibold text-gray-800 dark:text-white font-['DM_Sans']">
-              {localTime}
-            </p>
+          <div className={`px-3 py-1 rounded-full bg-white/5 text-xs font-bold text-white/80 border border-white/10`}>
+            {timeNames[language][timeOfDay.name]}
           </div>
         </div>
-        <div className={`text-sm font-medium ${timeOfDay.textColor} font-['Playfair_Display']`}>
-          {timeOfDay.name}
-        </div>
+
+        {/* Sun Path Visualization */}
+        {isDay && (
+          <div className="relative pt-4 pb-2">
+            <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden relative">
+              <div 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-400 transition-all duration-1000"
+                style={{ width: `${sunPos}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 px-1">
+              <Sunrise className="h-3 w-3 text-orange-400" />
+              <Sunset className="h-3 w-3 text-purple-400" />
+            </div>
+            {/* Moving Sun Icon */}
+            <div 
+              className="absolute top-0 transition-all duration-1000 ease-in-out pointer-events-none"
+              style={{ left: `calc(${sunPos}% - 8px)` }}
+            >
+              <Sun className="h-4 w-4 text-yellow-400 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

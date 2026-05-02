@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { useWeatherContext } from "../context/Wethercotext";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/translations";
 import { Search as SearchIcon, MapPin, Loader } from "lucide-react";
 
 const Search = () => {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const { getWeather, loading } = useWeatherContext();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
 
@@ -112,7 +116,7 @@ const Search = () => {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setFocused(true)}
             onBlur={() => setTimeout(() => setFocused(false), 200)}
-            placeholder="Search for a city..."
+            placeholder={t.search_placeholder}
             className="w-full px-4 py-3 pl-10 rounded-l-lg
     bg-white/[0.12]
     backdrop-blur-md
@@ -163,7 +167,7 @@ const Search = () => {
             aria-label="Search for city"
           >
             <span className="relative">
-              {loading ? "Searching" : "Search"}
+              {loading ? (language === 'hi' ? "खोज रहे हैं" : "Searching") : (language === 'hi' ? "खोजें" : "Search")}
               {loading && (
                 <span className="absolute -right-5 top-0 flex space-x-1">
                   <span
