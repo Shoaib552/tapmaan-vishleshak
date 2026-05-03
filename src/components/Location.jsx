@@ -1,69 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MapPin, Loader, AlertTriangle } from 'lucide-react';
 import { useWeatherContext } from '../context/Wethercotext';
 
 const Loctaion = () => {
-  const { getWeather } = useWeatherContext();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Get current location and fetch weather data
-  const handleGetLocationWeather = () => {
-    setIsLoading(true);
-    setError(null);
-    
-    // Check if geolocation is supported by the browser
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
-      setIsLoading(false);
-      return;
-    }
-    
-    // Get current position
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          
-          // Fetch weather data by coordinates
-          const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`
-          );
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch weather data');
-          }
-          
-          const data = await response.json();
-          
-          // Call the getWeather function with the city name
-          getWeather(data.name);
-          setIsLoading(false);
-        } catch (err) {
-          setError(`Error: ${err.message}`);
-          setIsLoading(false);
-          console.error("Location fetch error:", err);
-          
-          // Auto-hide error after 5 seconds
-          setTimeout(() => setError(null), 5000);
-        }
-      },
-      (err) => {
-        setError(`Location access denied: ${err.message}`);
-        setIsLoading(false);
-        console.error("Geolocation error:", err);
-        
-        // Auto-hide error after 5 seconds
-        setTimeout(() => setError(null), 5000);
-      },
-      { timeout: 10000, maximumAge: 600000 } // 10s timeout, cache for 10min
-    );
-  };
+  const { getWeatherByLocation, locationLoading: isLoading, locationError: error } = useWeatherContext();
 
   return (
     <div className="relative">
       <button
-        onClick={handleGetLocationWeather}
+        onClick={getWeatherByLocation}
         disabled={isLoading}
         className={`px-3 py-3 rounded-r-lg flex items-center justify-center transition-all duration-300
           ${isLoading ? 
