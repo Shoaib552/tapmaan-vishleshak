@@ -11,7 +11,7 @@ const Alerts = () => {
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/alerts?limit=1');
+        const response = await axios.get('https://tapmaan-backend.onrender.com/alerts?limit=1');
         if (response.data && response.data.length > 0) {
           setBackendAlerts(response.data);
         }

@@ -151,7 +151,7 @@ function AppContent() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={async () => {
-                        const API_URL = 'http://127.0.0.1:8000';
+                        const API_URL = 'https://tapmaan-backend.onrender.com';
                         console.log("Attempting to send test alert with token:", user.token);
                         try {
                           const response = await axios.post(
