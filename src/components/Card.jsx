@@ -18,52 +18,17 @@ import {
 import Recommendations from "./Recommendations";
 
 const Card = memo(() => {
-  const { weather, loading, error, getWeather } = useWeatherContext();
+  const { 
+    weather, 
+    loading, 
+    error, 
+    getWeather, 
+    getWeatherByLocation, 
+    locationLoading, 
+    locationError 
+  } = useWeatherContext();
   const { language } = useLanguage();
   const t = translations[language];
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState(null);
-  const getCurrentLocationWeather = () => {
-    setLocationLoading(true);
-    setLocationError(null);
-
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      setLocationLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-
-          const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${
-              import.meta.env.VITE_OPENWEATHER_API_KEY
-            }`
-          );
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch weather data");
-          }
-
-          const data = await response.json();
-          getWeather(data.name);
-          setLocationLoading(false);
-        } catch (err) {
-          setLocationError("Error fetching location data");
-          setLocationLoading(false);
-          setTimeout(() => setLocationError(null), 5000);
-        }
-      },
-      (err) => {
-        setLocationError("Location access denied");
-        setLocationLoading(false);
-        setTimeout(() => setLocationError(null), 5000);
-      }
-    );
-  };
 
   if (loading || locationLoading) return <Loading />;
   if (error) return <Error message={error} />;
@@ -194,7 +159,7 @@ const Card = memo(() => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={getCurrentLocationWeather}
+              onClick={getWeatherByLocation}
               disabled={locationLoading}
               className="p-2.5 bg-white/40 dark:bg-gray-800/40 rounded-lg shadow-sm hover:bg-white/70 
                 dark:hover:bg-gray-700/70 transition-all transform hover:scale-110

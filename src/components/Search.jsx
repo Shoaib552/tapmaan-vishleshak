@@ -7,68 +7,21 @@ import { Search as SearchIcon, MapPin, Loader } from "lucide-react";
 const Search = () => {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
-  const { getWeather, loading } = useWeatherContext();
+  const { 
+    getWeather, 
+    loading, 
+    getWeatherByLocation, 
+    locationLoading, 
+    locationError 
+  } = useWeatherContext();
   const { language } = useLanguage();
   const t = translations[language];
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
       getWeather(query.trim());
     }
-  };
-
-  // Get location weather function
-  const handleGetLocationWeather = () => {
-    setLocationLoading(true);
-    setLocationError(null);
-
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation not supported");
-      setLocationLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-
-          const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${
-              import.meta.env.VITE_OPENWEATHER_API_KEY
-            }`
-          );
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch weather data");
-          }
-
-          const data = await response.json();
-          getWeather(data.name);
-
-          // Set query to the city name for user feedback
-          setQuery(data.name);
-
-          setLocationLoading(false);
-        } catch (err) {
-          setLocationError(err.message);
-          setLocationLoading(false);
-
-          // Auto-hide error after 5 seconds
-          setTimeout(() => setLocationError(null), 5000);
-        }
-      },
-      (err) => {
-        setLocationError("Location access denied");
-        setLocationLoading(false);
-
-        // Auto-hide error after 5 seconds
-        setTimeout(() => setLocationError(null), 5000);
-      }
-    );
   };
 
   const isSearchDisabled = loading || locationLoading || !query.trim();
@@ -134,7 +87,7 @@ const Search = () => {
           {/* Location button */}
           <button
             type="button"
-            onClick={handleGetLocationWeather}
+            onClick={getWeatherByLocation}
             disabled={loading || locationLoading}
             className={`px-4 py-3 border-l border-gray-200 dark:border-gray-700 flex items-center justify-center
               ${
