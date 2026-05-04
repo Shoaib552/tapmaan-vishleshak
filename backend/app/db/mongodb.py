@@ -13,10 +13,15 @@ async def connect_to_mongo():
         db.client = AsyncIOMotorClient(settings.MONGODB_URL)
         # Verify connection
         await db.client.admin.command('ping')
-        db.db = db.client.get_default_database()
-        logging.info("Successfully connected to MongoDB Atlas")
+        
+        # Explicitly set the database name from the URL or fallback to 'tapmaan'
+        db_name = settings.MONGODB_URL.split('/')[-1].split('?')[0] or 'tapmaan'
+        db.db = db.client[db_name]
+        
+        logging.info(f"Successfully connected to MongoDB Atlas (Database: {db_name})")
     except Exception as e:
         logging.error(f"Could not connect to MongoDB: {e}")
+        db.db = None
         # Don't raise here, allow the app to start but log the error
         # This helps see the error in the console
 
