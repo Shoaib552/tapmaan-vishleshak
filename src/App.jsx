@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { WeatherProvider } from "./context/Wethercotext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { translations } from "./utils/translations";
 import Search from "./components/Search";
 import Card from "./components/Card";
@@ -15,8 +17,9 @@ import HourlyChart from "./components/HourlyChart";
 import Map from "./components/Map";
 import About from "./components/About";
 import Alerts from "./components/Alerts";
+import AuthModal from "./components/AuthModal";
 import { useWeatherContext } from "./context/Wethercotext";
-import { User } from "lucide-react";
+import { User, LogOut, ShieldAlert } from "lucide-react";
 import "./App.css";
 
 const BACKGROUNDS = {
@@ -97,16 +100,20 @@ function App() {
   // Removed toggleMute function
 
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </AuthProvider>
   );
 }
 
 function AppContent() {
   const { language, toggleLanguage } = useLanguage();
+  const { user, logout } = useAuth();
   const t = translations[language];
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const toggleAbout = () => {
     setIsAboutOpen(!isAboutOpen);
@@ -137,9 +144,55 @@ function AppContent() {
                   onClick={toggleAbout}
                   className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-all border border-white/10 backdrop-blur-sm group"
                 >
-                  <User className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
                   <span className="hidden sm:inline">{language === 'hi' ? 'डेवलपर' : 'About'}</span>
                 </button>
+
+                {user ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        const API_URL = 'http://127.0.0.1:8000';
+                        console.log("Attempting to send test alert with token:", user.token);
+                        try {
+                          const response = await axios.post(
+                            `${API_URL}/send-alert?alert_type=SYSTEM%20TEST&location=Dashboard&message=Your%20Tapmaan%20Vishleshak%20alert%20system%20is%20working%20perfectly!`,
+                            {},
+                            { headers: { Authorization: `Bearer ${user.token}` } }
+                          );
+                          console.log("Alert response:", response.data);
+                          alert("Test alert sent! Check your email.");
+                        } catch (err) {
+                          const status = err.response?.status;
+                          const detail = err.response?.data?.detail;
+                          const message = err.message;
+                          console.error("Alert failed:", { status, detail, message });
+                          alert(`Error ${status || "Network"}: ${detail || message}`);
+                        }
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-sm font-medium transition-all border border-amber-500/20 backdrop-blur-sm group"
+                    >
+                      <ShieldAlert className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                      <span className="hidden lg:inline">Test Alert</span>
+                    </button>
+                    
+                    <button
+                      onClick={logout}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-medium transition-all border border-red-500/20 backdrop-blur-sm group"
+                      title="Logout"
+                    >
+                      <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                      <span className="hidden sm:inline">{user.email?.split('@')[0] || 'User'}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsAuthOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-sm font-medium transition-all border border-blue-500/20 backdrop-blur-sm group"
+                  >
+                    <User className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    <span className="hidden sm:inline">Login</span>
+                  </button>
+                )}
                 <button
                   onClick={toggleLanguage}
                   className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-all border border-white/10 backdrop-blur-sm"
@@ -163,8 +216,9 @@ function AppContent() {
             <Alerts />
             <DynamicContent />
             
-            {/* Modal Overlay */}
+            {/* Modal Overlays */}
             <About isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+            <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
           </div>
         </div>
 
