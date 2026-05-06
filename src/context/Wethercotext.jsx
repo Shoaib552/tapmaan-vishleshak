@@ -53,28 +53,22 @@ export const WeatherProvider = ({ children }) => {
     setSearchHistory(prev => prev.filter(c => c !== city));
   };
 
+  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:8000'
+    : 'https://tapmaan-backend.onrender.com';
+
   const getWeatherByCoords = async (lat, lon) => {
     setLoading(true);
     setError(null);
     try {
-      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=${language}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
-      if (!weatherRes.ok) throw new Error('Weather data unavailable for this location');
+      const response = await fetch(`${API_URL}/weather/coords?lat=${lat}&lon=${lon}&lang=${language}`);
+      if (!response.ok) throw new Error('Weather data unavailable for this location');
       
-      const weatherData = await weatherRes.json();
-      setWeather(weatherData);
-      addToHistory(weatherData.name);
-
-      const forecastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=${language}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
-      if (forecastRes.ok) {
-        const forecastData = await forecastRes.json();
-        setForecast(forecastData);
-      }
-
-      const airQualityRes = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
-      if (airQualityRes.ok) {
-        const airQualityData = await airQualityRes.json();
-        setAirQuality(airQualityData);
-      }
+      const data = await response.json();
+      setWeather(data.weather);
+      setForecast(data.forecast);
+      setAirQuality(data.air_quality);
+      addToHistory(data.weather.name);
     } catch (err) {
       console.error('Error fetching weather by coords:', err);
       setError(err.message);
@@ -117,34 +111,17 @@ export const WeatherProvider = ({ children }) => {
     setError(null);
     
     try {
-      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=${language}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
+      const response = await fetch(`${API_URL}/weather?city=${city}&lang=${language}`);
       
-      if (!weatherRes.ok) {
+      if (!response.ok) {
         throw new Error('City not found or weather data unavailable');
       }
       
-      const weatherData = await weatherRes.json();
-      setWeather(weatherData);
+      const data = await response.json();
+      setWeather(data.weather);
+      setForecast(data.forecast);
+      setAirQuality(data.air_quality);
       addToHistory(city);
-      
-      const forecastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&lang=${language}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
-      
-      if (!forecastRes.ok) {
-        throw new Error('Forecast data unavailable');
-      }
-      
-      const forecastData = await forecastRes.json();
-      setForecast(forecastData);
-      
-      if (weatherData.coord) {
-        const { lat, lon } = weatherData.coord;
-        const airQualityRes = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`);
-        
-        if (airQualityRes.ok) {
-          const airQualityData = await airQualityRes.json();
-          setAirQuality(airQualityData);
-        }
-      }
     } catch (err) {
       console.error('Error fetching weather data:', err);
       setError(err.message);

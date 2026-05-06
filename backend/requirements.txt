@@ -13,3 +13,4 @@ httpx
 bcrypt
 gunicorn
 dnspython
+slowapi
