@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.config import settings
 from app.db.mongodb import get_database
 from app.db.models import UserCreate, UserInDB, Token, TokenData, UserResponse
+from app.core.limiter import limiter
 from datetime import datetime
 import logging
 
@@ -33,7 +34,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 @router.post("/register", response_model=UserResponse)
-async def register(user_in: UserCreate):
+@limiter.limit("5/minute")
+async def register(request: Request, user_in: UserCreate):
     db = get_database()
     existing_user = await db.users.find_one({"email": user_in.email})
     if existing_user:
@@ -62,7 +64,8 @@ async def register(user_in: UserCreate):
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 @router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+@limiter.limit("10/minute")
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     db = get_database()
     user = await db.users.find_one({"email": form_data.username})
     if not user or not verify_password(form_data.password, user["hashed_password"]):

@@ -13,3 +13,5 @@ httpx
 bcrypt
 gunicorn
 dnspython
+langchain-community
+ollama

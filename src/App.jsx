@@ -18,6 +18,7 @@ import Map from "./components/Map";
 import About from "./components/About";
 import Alerts from "./components/Alerts";
 import AuthModal from "./components/AuthModal";
+import ChatAssistant from "./components/ChatAssistant";
 import { useWeatherContext } from "./context/Wethercotext";
 import { User, LogOut, ShieldAlert } from "lucide-react";
 import "./App.css";
@@ -267,6 +268,9 @@ function AppContent() {
             </div>
           </div>
         </footer>
+        
+        {/* Floating Chat Assistant - Pinned to bottom-right */}
+        <ChatAssistant />
       </div>
     </WeatherProvider>
   );
