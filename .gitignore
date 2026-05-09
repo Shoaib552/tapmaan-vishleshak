@@ -25,3 +25,22 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+backend/venv/
+venv/
+.venv/
+env/
+
+# Python egg / build artifacts
+*.egg-info/
+dist/
+build/
