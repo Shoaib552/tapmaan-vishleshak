@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-const API_URL = 'https://tapmaan-backend.onrender.com';
+const API_URL = 'http://localhost:8000';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -39,13 +39,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, full_name, location, password) => {
+  const register = async (email, full_name, location, phone, password) => {
     setError(null);
     try {
       await axios.post(`${API_URL}/register`, {
         email,
         full_name,
         location,
+        phone,
         password
       });
       // Automatically login after registration

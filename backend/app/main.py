@@ -7,6 +7,7 @@ from app.core.config import settings
 import uvicorn
 import logging
 import time
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

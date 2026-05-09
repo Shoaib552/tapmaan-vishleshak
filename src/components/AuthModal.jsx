@@ -9,6 +9,7 @@ const AuthModal = ({ isOpen, onClose }) => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [location, setLocation] = useState('');
+  const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { login, register, error, setError } = useAuth();
@@ -24,7 +25,7 @@ const AuthModal = ({ isOpen, onClose }) => {
     if (isLogin) {
       success = await login(email, password);
     } else {
-      success = await register(email, fullName, location, password);
+      success = await register(email, fullName, location, phone, password);
     }
     
     setIsSubmitting(false);
@@ -93,6 +94,16 @@ const AuthModal = ({ isOpen, onClose }) => {
                     placeholder="Location (Optional)"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                  />
+                </div>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">WA</div>
+                  <input
+                    type="text"
+                    placeholder="WhatsApp Number (+91...)"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                   />
                 </div>
