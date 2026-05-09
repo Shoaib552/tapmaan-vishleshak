@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     MAIL_FROM_NAME: str = "Tapmaan Alerts"
     
     OPENWEATHER_API_KEY: Optional[str] = None
+    
+    # WhatsApp Cloud API
+    WHATSAPP_TOKEN: Optional[str] = None
+    WHATSAPP_PHONE_ID: Optional[str] = None
 
     class Config:
         env_file = ".env"

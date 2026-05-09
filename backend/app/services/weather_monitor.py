@@ -2,8 +2,8 @@ import httpx
 from app.core.config import settings
 from app.db.mongodb import get_database
 from app.services.email import send_alert_email
+from app.services.whatsapp import send_whatsapp_alert
 from datetime import datetime
-import random
 import logging
 
 async def check_environmental_conditions():
@@ -12,6 +12,11 @@ async def check_environmental_conditions():
     """
     db = get_database()
     
+    # Safety guard: if MongoDB is not connected (e.g., network blip), skip this run
+    if db is None:
+        logging.warning("MongoDB not connected. Skipping this scheduler run.")
+        return
+
     # Get all users who have a location set
     cursor = db.users.find({"location": {"$exists": True, "$ne": ""}})
     users = await cursor.to_list(length=1000)
@@ -20,6 +25,10 @@ async def check_environmental_conditions():
         city = user.get("location")
         email = user.get("email")
         
+        # Skip users who haven't set a location yet
+        if not city:
+            continue
+            
         try:
             # Fetch real weather and AQI for the user's city
             async with httpx.AsyncClient() as client:
@@ -56,8 +65,8 @@ async def check_environmental_conditions():
                         "severity": "high"
                     })
                 
-                # Trigger real Heatwave alert
-                if temp > 40:
+                # Trigger real Heatwave alert (LOWERED TO 10 FOR TESTING)
+                if temp > 10:
                     alerts_triggered.append({
                         "type": "Extreme Heat Alert",
                         "location": city,
@@ -71,13 +80,25 @@ async def check_environmental_conditions():
                     alert["user_email"] = email
                     await db.alerts.insert_one(alert)
                     
+                    # Send Email Alert
                     await send_alert_email(
                         email_list=[email],
                         alert_type=alert["type"],
                         location=alert["location"],
                         message=alert["message"]
                     )
-                    logging.info(f"Sent REAL {alert['type']} alert to {email} for {city}")
+
+                    # Send WhatsApp Alert (if phone exists)
+                    phone = user.get("phone")
+                    if phone:
+                        await send_whatsapp_alert(
+                            phone_number=phone,
+                            alert_type=alert["type"],
+                            location=alert["location"],
+                            message=alert["message"]
+                        )
+                        
+                    logging.info(f"Sent REAL {alert['type']} Multi-Channel alert to {email}")
 
         except Exception as e:
             logging.error(f"Error checking weather for {city}: {str(e)}")
@@ -96,11 +117,24 @@ async def trigger_manual_alert(alert_type: str, location: str, message: str):
     }
     await db.alerts.insert_one(alert)
     
-    cursor = db.users.find({}, {"email": 1})
+    # Fetch all users, including both email and phone fields
+    cursor = db.users.find({}, {"email": 1, "phone": 1})
     users = await cursor.to_list(length=1000)
-    emails = [user["email"] for user in users]
     
+    # Send email alerts to all users
+    emails = [user["email"] for user in users if user.get("email")]
     if emails:
         await send_alert_email(emails, alert_type, location, message)
-    
+        
+    # Send WhatsApp alerts to users who have registered a phone number
+    for user in users:
+        phone = user.get("phone")
+        if phone:
+            await send_whatsapp_alert(
+                phone_number=phone,
+                alert_type=alert_type,
+                location=location,
+                message=message
+            )
+            
     return alert

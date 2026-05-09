@@ -39,6 +39,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str
     location: Optional[str] = None
+    phone: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
