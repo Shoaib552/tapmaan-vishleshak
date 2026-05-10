@@ -7,11 +7,11 @@ conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
     MAIL_PASSWORD=settings.MAIL_PASSWORD,
     MAIL_FROM=settings.MAIL_FROM,
-    MAIL_PORT=settings.MAIL_PORT,
+    MAIL_PORT=465,           # Port 465 (SSL) — port 587 (STARTTLS) is blocked by Render
     MAIL_SERVER=settings.MAIL_SERVER,
     MAIL_FROM_NAME=settings.MAIL_FROM_NAME,
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_STARTTLS=False,     # Must be False when using SSL
+    MAIL_SSL_TLS=True,       # Use SSL instead of STARTTLS
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True
 )
@@ -36,12 +36,16 @@ async def send_alert_email(email_list: List[EmailStr], alert_type: str, location
     </html>
     """
 
-    message = MessageSchema(
+    message_schema = MessageSchema(
         subject=f"URGENT: {alert_type} Alert for {location}",
         recipients=email_list,
         body=html,
         subtype=MessageType.html
     )
 
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    try:
+        fm = FastMail(conf)
+        await fm.send_message(message_schema)
+    except Exception as e:
+        # Log the error but don't crash — WhatsApp alert will still be sent
+        print(f"Email send failed (non-critical): {str(e)}")
