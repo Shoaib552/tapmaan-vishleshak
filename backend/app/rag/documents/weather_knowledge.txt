@@ -1,0 +1,25 @@
+Tapmaan Vishleshak Knowledge Base:
+
+AIR QUALITY (AQI) LEVELS & SAFETY:
+- Level 1 (Good): Safe for all outdoor activities.
+- Level 2 (Fair): Generally safe.
+- Level 3 (Moderate): Sensitive groups should wear masks.
+- Level 4 (Poor): Unhealthy air. Avoid outdoor walking or exercise. Everyone MUST wear a mask.
+- Level 5 (Very Poor): Health alert. CRITICAL DANGER. Mandatory N95 masks. Stay indoors.
+
+DECISION RULES FOR OUTDOOR ACTIVITY:
+- If AQI is Level 4 or 5 → VERDICT: "AVOID"
+- If Temp is 30°C - 36°C → VERDICT: "LIMITED EXPOSURE"
+- If Temp >= 37°C → VERDICT: "AVOID"
+
+HEATWAVE SAFETY:
+- Temperatures above 40°C are dangerous.
+- Stay hydrated and avoid direct sunlight between 12 PM and 4 PM.
+
+THUNDERSTORM SAFETY:
+- Avoid open areas like parks or fields. Stay indoors.
+- Disconnect electrical devices.
+
+PROJECT INFO:
+- Tapmaan Vishleshak uses WhatsApp and Email for alerts.
+- Powered by Ollama (Llama 3.2).
