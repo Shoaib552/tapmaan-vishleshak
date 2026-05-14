@@ -5,7 +5,6 @@ import time
 import uvicorn
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.core.config import settings
@@ -29,7 +28,7 @@ async def log_requests(request: Request, call_next):
     logging.info(f"RID: {request.method} {request.url.path} - Status: {response.status_code} - Time: {process_time:.4f}s")
     return response
 
-# CORS configuration - Restricted for security
+# CORS
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -48,10 +47,27 @@ app.add_middleware(
 async def startup_event():
     await connect_to_mongo()
     start_scheduler()
-    
-    # Security check: Log if weather key is loaded (masked)
+
     if hasattr(settings, "OPENWEATHER_API_KEY") and settings.OPENWEATHER_API_KEY:
         logging.info(f"Weather API Key loaded: {settings.OPENWEATHER_API_KEY[:4]}****")
+
+    # ── Warm up RAG components AFTER server starts ──────────────────
+    # This prevents startup timeout on Render free tier
+    try:
+        logging.info("[Startup] Warming up embedding model...")
+        from app.rag.embeddings import embedding_engine
+        embedding_engine.encode("warmup")
+        logging.info("[Startup] Embedding model ready.")
+    except Exception as e:
+        logging.error(f"[Startup] Embedding warmup failed (non-critical): {e}")
+
+    try:
+        logging.info("[Startup] Warming up vector store...")
+        from app.rag.store import vector_store
+        vector_store._get_collection()
+        logging.info("[Startup] Vector store ready.")
+    except Exception as e:
+        logging.error(f"[Startup] Vector store warmup failed (non-critical): {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
