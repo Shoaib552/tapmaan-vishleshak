@@ -55,4 +55,4 @@ dist-ssr/
 
 # ChromaDB
 backend/app/rag/vectordb/
-.sqlite3
+*.sqlite3
