@@ -11,9 +11,13 @@ import pytest
 import asyncio
 from unittest.mock import patch, MagicMock
 
+import os
+# ── Mock environment before imports ───────────────────────────────────────
+os.environ["GROQ_API_KEY"] = "gsk_test_dummy_key"
+
 # ── Adjust import paths to match your project structure ───────────────────
 from app.rag.rule_engine import WeatherRuleEngine, Decision
-from app.rag.orchestrator import RAGOrchestrator, DeterministicGuard
+from app.rag.orchestrator import RAGOrchestrator
 from app.rag.prompts import AQI_UNKNOWN_RESTRICTION
 
 
@@ -113,7 +117,7 @@ class TestWeatherRuleEngine:
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestDeterministicGuard:
-    guard  = DeterministicGuard()
+    orch   = RAGOrchestrator()
     engine = WeatherRuleEngine()
 
     def _rule(self, temp, aqi):
@@ -122,20 +126,18 @@ class TestDeterministicGuard:
     # ── Valid outputs ──────────────────────────────────────────────────────
     def test_valid_output_passes(self):
         rule = self._rule(28.0, None)
-        valid, _ = self.guard.validate("The decision is GO OUTSIDE. Temperature is normal.", rule)
+        valid = self.orch.validate_output("The decision is GO OUTSIDE. Temperature is normal.", rule)
         assert valid is True
 
     def test_valid_output_with_aqi_known_passes(self):
         rule = self._rule(25.0, 3)
-        valid, _ = self.guard.validate("Decision: GO OUTSIDE. Air quality is Level 3.", rule)
+        valid = self.orch.validate_output("Decision: GO OUTSIDE. Air quality is Level 3.", rule)
         assert valid is True
 
-    # ── Missing decision label ─────────────────────────────────────────────
     def test_missing_decision_label_fails(self):
         rule = self._rule(28.0, None)
-        valid, reason = self.guard.validate("You should probably stay home today.", rule)
+        valid = self.orch.validate_output("You should probably stay home today.", rule)
         assert valid is False
-        assert "decision label" in reason
 
     # ── AQI hallucination when aqi=None ───────────────────────────────────
     @pytest.mark.parametrize("hallucinated_text", [
@@ -148,13 +150,12 @@ class TestDeterministicGuard:
     ])
     def test_aqi_hallucination_rejected_when_aqi_unknown(self, hallucinated_text):
         rule = self._rule(28.0, None)
-        valid, reason = self.guard.validate(hallucinated_text, rule)
+        valid = self.orch.validate_output(hallucinated_text, rule)
         assert valid is False, f"Should have rejected: {hallucinated_text}"
 
-    # ── AQI language is fine when AQI is known ────────────────────────────
     def test_aqi_language_allowed_when_aqi_known(self):
         rule = self._rule(25.0, 4)
-        valid, _ = self.guard.validate(
+        valid = self.orch.validate_output(
             "The decision is LIMITED EXPOSURE due to poor air quality (AQI Level 4).", rule
         )
         assert valid is True
@@ -162,17 +163,17 @@ class TestDeterministicGuard:
     # ── Fallback is deterministic ──────────────────────────────────────────
     def test_fallback_contains_decision(self):
         rule = self._rule(28.0, None)
-        fb = self.guard.build_fallback(rule)
+        fb = self.orch._deterministic_fallback(rule)
         assert "GO OUTSIDE" in fb
 
     def test_fallback_contains_aqi_caveat_when_unknown(self):
         rule = self._rule(28.0, None)
-        fb = self.guard.build_fallback(rule)
+        fb = self.orch._deterministic_fallback(rule)
         assert "not available" in fb.lower() or "unavailable" in fb.lower()
 
     def test_fallback_no_aqi_hallucination(self):
         rule = self._rule(28.0, None)
-        fb = self.guard.build_fallback(rule)
+        fb = self.orch._deterministic_fallback(rule)
         # Fallback must not say air quality is poor/good/anything
         assert "poor air" not in fb.lower()
         assert "unhealthy" not in fb.lower()
@@ -191,8 +192,9 @@ class TestOrchestratorIntegration:
         return ctx
 
     def _mock_llm(self, response_text):
-        mock_resp = {"message": {"content": response_text}}
-        return patch("app.rag.orchestrator.ollama.chat", return_value=mock_resp)
+        mock_resp = MagicMock()
+        mock_resp.choices = [MagicMock(message=MagicMock(content=response_text))]
+        return patch("groq.resources.chat.completions.Completions.create", return_value=mock_resp)
 
     # ── Bug report exact case ──────────────────────────────────────────────
     @pytest.mark.asyncio
@@ -244,7 +246,7 @@ class TestOrchestratorIntegration:
         orch = RAGOrchestrator()
         ctx  = self._make_context(28.0)
 
-        with patch("app.rag.orchestrator.ollama.chat", side_effect=Exception("Ollama down")):
+        with patch("groq.resources.chat.completions.Completions.create", side_effect=Exception("Groq down")):
             result = await orch.get_response("Is it safe?", ctx)
 
         assert result["guardrail_hit"] is True
@@ -265,10 +267,6 @@ class TestOrchestratorIntegration:
             assert key in result, f"Missing key: {key}"
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-#  PROMPT INJECTION RESISTANCE TEST
-# ═══════════════════════════════════════════════════════════════════════════
-
 class TestPromptInjectionResistance:
     """
     Even if a user embeds prompt injection in their question,
@@ -276,7 +274,7 @@ class TestPromptInjectionResistance:
     """
 
     engine = WeatherRuleEngine()
-    guard  = DeterministicGuard()
+    orch   = RAGOrchestrator()
 
     def test_injected_question_does_not_change_rule_engine(self):
         """Rule engine operates only on temp/aqi — not on the question."""
