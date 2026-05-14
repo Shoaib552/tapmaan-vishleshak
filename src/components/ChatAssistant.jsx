@@ -44,7 +44,7 @@ const buildQuestionWithLangInstruction = (question, lang) => {
 };
 
 // ─── Language display labels ───────────────────────────────────────────────────
-const LANG_LABELS = { en: '🇬🇧 English', hi: '🇮🇳 Hindi', both: '🌐 Both' };
+const LANG_LABELS = { hi: '🇮🇳 Hindi', both: '🌐 Both' };
 
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -76,9 +76,8 @@ const ChatAssistant = () => {
   const recognitionRef = useRef(null);
 
   // Dynamic API URL logic
-  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:8000'
-    : 'https://tapmaan-backend.onrender.com';
+  // FORCE LOCAL for debugging and parity fix
+  const API_URL = 'http://127.0.0.1:8000';
 
   // Check if browser supports Web Speech API on mount
   useEffect(() => {
@@ -194,18 +193,20 @@ const ChatAssistant = () => {
     setIsLoading(true);
     setVoiceError('');
 
-    //Build the question with language instruction for the AI
-    const questionForAI = buildQuestionWithLangInstruction(rawQuestion, newLang);
+    // ── DIRECT TRANSPARENCY ──────────────────────────────────────────────
+    // Send the raw question directly to the backend.
+    const questionForAI = rawQuestion;
 
-
-
-    // ADD THIS
-    console.log('[DEBUG] weather_context being sent:', JSON.stringify({
-      temp: weather?.main?.temp,
-      aqi: airQuality?.list?.[0]?.main?.aqi,
-      full_air_quality: airQuality,
-      full_weather: weather
-    }));
+    // Compute local time from weather data (dt + timezone offset)
+    let localTime = null;
+    if (weather?.dt && weather?.timezone !== undefined) {
+      const localTimestamp = (weather.dt + weather.timezone) * 1000;
+      const d = new Date(localTimestamp);
+      const h = d.getUTCHours();
+      const m = d.getUTCMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      localTime = `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${ampm} (IST)`;
+    }
 
     try {
       const response = await fetch(`${API_URL}/chat`, {
@@ -213,13 +214,15 @@ const ChatAssistant = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: questionForAI,
+          history: messages.slice(-6).map(m => ({
+            role: m.role,
+            content: m.content
+          })),
           weather_context: {
             current: weather || {},
-            forecast: forecast || {},
             air_quality: airQuality || {},
-            local_time: new Date().toLocaleTimeString(),
-            local_date: new Date().toLocaleDateString(),
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            city: weather?.name || "",
+            local_time: localTime,
           }
         }),
       });
@@ -228,16 +231,19 @@ const ChatAssistant = () => {
 
       const data = await response.json();
 
+      // Prioritize the hardened 'formatted' response from the deterministic engine
+      const baseAnswer = data.formatted || data.answer;
+
       //If it was a language-change command, also show a confirmation
-      let assistantContent = data.answer;
+      let assistantContent = baseAnswer;
       if (langCommand) {
         const confirmations = {
           en: '✅ Got it! I will now respond in English.',
           hi: '✅ ठीक है! अब मैं हिंदी में जवाब दूंगा।',
           both: '✅ Sure! I will now respond in both Hindi and English.'
         };
-        // Prepend confirmation only if the answer doesn't already acknowledge it
-        assistantContent = confirmations[langCommand] + '\n\n' + data.answer;
+        // Prepend confirmation
+        assistantContent = confirmations[langCommand] + '\n\n' + baseAnswer;
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: assistantContent }]);
@@ -256,24 +262,29 @@ const ChatAssistant = () => {
       {/* Chat Bubble Toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all transform hover:scale-110 active:scale-95"
+        className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md text-white shadow-xl flex items-center justify-center hover:bg-white/20 transition-all transform hover:scale-110 active:scale-95 border border-white/20 group"
       >
-        {isOpen ? <span className="text-2xl font-bold">×</span> : <span className="text-2xl">💬</span>}
+        {isOpen ? (
+          <span className="text-3xl font-light group-hover:rotate-90 transition-transform duration-300">×</span>
+        ) : (
+          <span className="text-3xl filter drop-shadow-md">💬</span>
+        )}
       </button>
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`absolute bottom-20 right-0 w-80 md:w-96 h-[520px] rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 border animate-slide-up ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+        <div className={`absolute bottom-24 right-0 w-85 md:w-[400px] h-[550px] rounded-3xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 border backdrop-blur-2xl animate-slide-up ${darkMode
+          ? 'bg-black/40 border-white/10 text-white'
+          : 'bg-white/[0.12] border-white/[0.15] text-white'
           }`}>
 
           {/* Header */}
-          <div className="p-4 bg-blue-600 text-white font-bold flex justify-between items-center shadow-md">
+          <div className="p-4 bg-white/10 text-white font-bold flex justify-between items-center backdrop-blur-md border-b border-white/10 shadow-sm">
             <div className="flex flex-col">
-              <span>Tapmaan Assistant</span>
+              <span className="tracking-tight">Tapmaan Assistant</span>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-normal opacity-80 uppercase tracking-wider">Powered by Local AI</span>
-                {/* Current response language badge */}
-                <span className="text-[9px] font-semibold bg-white/20 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-normal opacity-70 uppercase tracking-wider">Climate AI</span>
+                <span className="text-[9px] font-semibold bg-white/10 px-1.5 py-0.5 rounded-full border border-white/10">
                   {LANG_LABELS[responseLang]}
                 </span>
               </div>
@@ -283,21 +294,19 @@ const ChatAssistant = () => {
                 setMessages([{ role: 'assistant', content: 'Chat cleared. How can I help you?' }]);
                 setResponseLang('en');
               }}
-              className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded"
+              className="text-[10px] bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg border border-white/10 transition-all active:scale-95"
             >
               Clear
             </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-blue-500/20">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-tr-none shadow-sm'
-                  : darkMode
-                    ? 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
-                    : 'bg-slate-100 text-slate-700 rounded-tl-none border border-slate-200'
+                <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap backdrop-blur-sm shadow-sm border ${msg.role === 'user'
+                  ? 'bg-blue-500/30 text-white rounded-tr-none border-blue-400/30'
+                  : 'bg-white/5 text-white/90 rounded-tl-none border-white/10'
                   }`}>
                   {msg.content}
                 </div>
@@ -306,11 +315,11 @@ const ChatAssistant = () => {
 
             {/* Thinking dots */}
             {isLoading && (
-              <div className="flex items-center gap-2 text-xs text-slate-400 animate-pulse">
+              <div className="flex items-center gap-2 text-xs text-white/60 animate-pulse">
                 <div className="flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></span>
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce delay-75"></span>
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce delay-150"></span>
+                  <span className="w-1.5 h-1.5 bg-blue-400/60 rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-blue-400/60 rounded-full animate-bounce delay-75"></span>
+                  <span className="w-1.5 h-1.5 bg-blue-400/60 rounded-full animate-bounce delay-150"></span>
                 </div>
                 <span>Assistant is thinking...</span>
               </div>
@@ -320,17 +329,17 @@ const ChatAssistant = () => {
 
           {/* Voice Error Banner */}
           {voiceError && (
-            <div className="px-4 py-2 text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border-t border-red-100">
+            <div className="px-4 py-2 text-xs text-red-400 bg-red-900/20 border-t border-white/10 backdrop-blur-sm">
               ⚠️ {voiceError}
             </div>
           )}
 
           {/* Listening Indicator */}
           {isListening && (
-            <div className="px-4 py-2 flex items-center gap-2 text-xs text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-100">
+            <div className="px-4 py-2 flex items-center gap-2 text-xs text-blue-400 bg-blue-900/20 border-t border-white/10 backdrop-blur-sm">
               <div className="flex items-end gap-0.5 h-4">
                 {[0, 100, 200, 100, 0].map((delay, i) => (
-                  <span key={i} className="w-0.5 bg-blue-500 rounded animate-bounce" style={{ animationDelay: `${delay}ms` }}></span>
+                  <span key={i} className="w-0.5 bg-blue-400 rounded animate-bounce" style={{ animationDelay: `${delay}ms` }}></span>
                 ))}
               </div>
               <span>Listening in {voiceLang === 'hi-IN' ? 'Hindi 🇮🇳' : 'English 🇬🇧'}...</span>
@@ -338,8 +347,8 @@ const ChatAssistant = () => {
           )}
 
           {/* Input Area */}
-          <form onSubmit={handleSend} className={`p-3 border-t ${darkMode ? 'border-slate-700' : 'border-slate-100'}`}>
-            <div className="flex gap-1.5 items-center">
+          <form onSubmit={handleSend} className="p-3 border-t border-white/10 bg-white/5 backdrop-blur-lg">
+            <div className="flex gap-2 items-center">
 
               {/* Voice Language Toggle (EN/HI) */}
               {isVoiceSupported && (
@@ -347,11 +356,9 @@ const ChatAssistant = () => {
                   type="button"
                   onClick={toggleVoiceLang}
                   title={`Voice input: ${voiceLang === 'en-US' ? 'English (click to switch to Hindi)' : 'Hindi (click to switch to English)'}`}
-                  className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-1 rounded-md border transition-all ${voiceLang === 'hi-IN'
-                    ? 'bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-400'
-                    : darkMode
-                      ? 'bg-slate-700 border-slate-600 text-slate-300'
-                      : 'bg-slate-100 border-slate-200 text-slate-600'
+                  className={`flex-shrink-0 text-[10px] font-bold px-2 py-1.5 rounded-lg border transition-all ${voiceLang === 'hi-IN'
+                    ? 'bg-orange-500/20 border-orange-400/30 text-orange-300'
+                    : 'bg-white/10 border-white/10 text-white/80 hover:bg-white/20'
                     }`}
                 >
                   {voiceLang === 'hi-IN' ? 'HI' : 'EN'}
@@ -365,8 +372,7 @@ const ChatAssistant = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={isListening ? 'Listening...' : 'Ask in any language...'}
-                className={`flex-1 p-2 rounded-lg text-sm outline-none border focus:border-blue-500 transition-all ${darkMode ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-800'
-                  } ${isListening ? 'border-blue-400 ring-1 ring-blue-400' : ''}`}
+                className={`flex-1 p-2.5 rounded-xl text-sm outline-none border transition-all bg-white/5 border-white/10 text-white placeholder-white/40 focus:bg-white/10 focus:border-white/20 ${isListening ? 'border-blue-400/50 ring-2 ring-blue-400/20' : ''}`}
               />
 
               {/* Mic Button */}
@@ -375,11 +381,9 @@ const ChatAssistant = () => {
                   type="button"
                   onClick={handleVoiceInput}
                   title={isListening ? 'Stop listening' : `Speak in ${voiceLang === 'hi-IN' ? 'Hindi' : 'English'}`}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${isListening
-                    ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/40'
-                    : darkMode
-                      ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${isListening
+                    ? 'bg-red-500/30 text-red-200 border border-red-400/30 animate-pulse'
+                    : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/20 hover:text-white'
                     }`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -394,18 +398,18 @@ const ChatAssistant = () => {
               <button
                 type="submit"
                 disabled={isLoading || !input.trim()}
-                className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-40 transition-colors shadow-sm flex-shrink-0"
+                className="bg-blue-500/40 hover:bg-blue-500/60 text-white px-4 py-2.5 rounded-xl text-sm font-bold disabled:opacity-20 transition-all border border-blue-400/30 shadow-lg active:scale-95"
               >
                 Send
               </button>
             </div>
 
             {/* Helper hint */}
-            <p className="text-[10px] text-slate-400 mt-1.5 text-center">
+            {/* <p className="text-[10px] text-slate-400 mt-1.5 text-center">
               {isVoiceSupported
                 ? `🎙️ ${voiceLang === 'hi-IN' ? 'Hindi' : 'English'} voice • Say "answer in Hindi/English/both" to change language`
                 : 'Say "answer in Hindi/English/both" to change language'}
-            </p>
+            </p> */}
           </form>
         </div>
       )}
