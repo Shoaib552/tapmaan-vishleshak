@@ -1,0 +1,12 @@
+Tapmaan Vishleshak is a smart weather analysis platform.
+It uses OpenWeather API for real-time data and Ollama for AI-powered insights.
+The name 'Tapmaan' means Temperature and 'Vishleshak' means Analyzer in Hindi.
+It provides severe weather alerts via WhatsApp and Email.
+It also features a bilingual Chat Assistant that understands English and Hindi.
+AQI Levels:
+1: Good (0-50)
+2: Fair (51-100)
+3: Moderate (101-200)
+4: Poor (201-300)
+5: Very Poor (301-400)
+6: Severe (401+)

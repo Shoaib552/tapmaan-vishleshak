@@ -1,41 +1,62 @@
-.
-├── assets
-│   └── videos
-│       └── video.gif
-├── eslint.config.js
-├── index.html
-├── package-lock.json
-├── package.json
-├── postcss.config.js
-├── project-structure.txt
-├── public
-│   └── vite.svg
-├── README.md
-├── src
-│   ├── App.css
-│   ├── App.jsx
-│   ├── assets
-│   │   └── react.svg
-│   ├── components
-│   │   ├── Card.jsx
-│   │   ├── Day.jsx
-│   │   ├── Details.jsx
-│   │   ├── Error.jsx
-│   │   ├── Forecast.jsx
-│   │   ├── Loading.jsx
-│   │   ├── Location.jsx
-│   │   ├── Search.jsx
-│   │   ├── SearchHistory.jsx
-│   │   └── Theme.jsx
-│   ├── context
-│   │   └── Wethercotext.jsx
-│   ├── hooks
-│   │   └── Weatherhook.js
-│   ├── index.css
-│   ├── main.jsx
-│   └── utils
-│       └── api.js
-├── tailwind.config.js
-└── vite.config.js
+==========================================================
+TAPMAAN VISHLESHAK - PROJECT DIRECTORY STRUCTURE
+==========================================================
 
-10 directories, 29 files
+📁 BACKEND (FastAPI)
+----------------------------------------------------------
+backend/
+├── app/
+│   ├── api/
+│   │   └── endpoints/         # Route Handlers
+│   │       ├── auth.py        # User Login/Register & Security
+│   │       ├── alerts.py      # Weather Alerts logic
+│   │       ├── weather.py     # Secure Weather Proxy
+│   │       └── chat.py        # RAG AI Assistant Endpoint
+│   ├── core/                  # Core System Logic
+│   │   ├── config.py          # Environment Variables & Settings
+│   │   ├── security.py        # JWT & Password Hashing
+│   │   ├── limiter.py         # Rate Limiting (Brute-force protection)
+│   │   └── scheduler.py       # Background Alert Tasks
+│   ├── db/                    # Database Layer
+│   │   ├── mongodb.py         # Atlas Connection Logic
+│   │   └── models.py          # Pydantic Data Models
+│   ├── services/              # Business Logic (External APIs)
+│   │   ├── weather_api.py     # OpenWeather API Integration
+│   │   ├── rag_service.py     # Ollama AI / RAG Logic
+│   │   └── email.py           # SMTP Email Alert Service
+│   └── main.py                # Application Entry Point & Middleware
+├── .env                       # Secret Keys (Hidden from Git)
+└── requirements.txt           # Python Dependencies
+
+
+📁 FRONTEND (React + Vite)
+----------------------------------------------------------
+src/
+├── components/                # UI Components
+│   ├── ChatAssistant.jsx      # Floating AI Chatbot (Ollama RAG)
+│   ├── Search.jsx             # City Search with Autocomplete
+│   ├── Card.jsx               # Current Weather Display
+│   ├── Forecast.jsx           # 5-Day Visual Forecast
+│   ├── AirQuality.jsx         # AQI Data & Health Advice
+│   ├── Alerts.jsx             # Active Severe Weather Alerts
+│   ├── Map.jsx                # Interactive Weather Map
+│   └── AuthModal.jsx          # Login/Register UI
+├── context/                   # Global State Management
+│   ├── Wethercotext.jsx       # Weather Data & API Logic
+│   ├── AuthContext.jsx        # User Session & JWT Tracking
+│   └── LanguageContext.jsx    # English/Hindi Toggle Logic
+├── utils/                     # Helpers & Localization
+│   ├── translations.js        # Multi-language Dictionary
+│   └── api.js                 # Axios Configuration
+├── assets/                    # Static Assets (Logos, Icons)
+├── App.jsx                    # Main Application Layout
+├── main.jsx                   # React DOM Rendering
+└── index.css                  # Global Styling & Animations
+
+
+⚙️ ROOT CONFIGURATIONS
+----------------------------------------------------------
+├── .gitignore                 # Excludes node_modules, venv, .env
+├── package.json               # Frontend dependencies & scripts
+├── tailwind.config.js         # Custom design tokens & colors
+└── README.md                  # Project overview & Setup guide

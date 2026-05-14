@@ -18,6 +18,7 @@ import Map from "./components/Map";
 import About from "./components/About";
 import Alerts from "./components/Alerts";
 import AuthModal from "./components/AuthModal";
+import ChatAssistant from "./components/ChatAssistant";
 import { useWeatherContext } from "./context/Wethercotext";
 import { User, LogOut, ShieldAlert } from "lucide-react";
 import "./App.css";
@@ -267,20 +268,28 @@ function AppContent() {
             </div>
           </div>
         </footer>
+        
+        {/* Floating Chat Assistant - Pinned to bottom-right */}
+        <ChatAssistant />
       </div>
     </WeatherProvider>
   );
 }
 
 const DynamicContent = () => {
-  const { weather, forecast, airQuality, loading, error } = useWeatherContext();
+  const { weather, forecast, airQuality, loading, error, locationLoading } = useWeatherContext();
   const { language } = useLanguage();
   const t = translations[language];
 
-  if (loading) {
+  if (loading || locationLoading) {
     return (
       <div className="p-6 bg-white/[0.10] rounded-xl backdrop-blur-md shadow-lg border border-white/[0.15] animate-fade-in">
         <Loading />
+        {locationLoading && (
+          <p className="text-center text-white/70 text-sm mt-3 font-['DM_Sans']">
+            📍 Fetching your location...
+          </p>
+        )}
       </div>
     );
   }

@@ -15,13 +15,17 @@ class Settings(BaseSettings):
     MAIL_SERVER: str = "smtp.gmail.com"
     MAIL_FROM_NAME: str = "Tapmaan Alerts"
     
+    # Weather API
     OPENWEATHER_API_KEY: Optional[str] = None
     
     # WhatsApp Cloud API
     WHATSAPP_TOKEN: Optional[str] = None
     WHATSAPP_PHONE_ID: Optional[str] = None
 
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 settings = Settings()
