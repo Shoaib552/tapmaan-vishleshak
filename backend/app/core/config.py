@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     
     # Weather API
     OPENWEATHER_API_KEY: Optional[str] = None
+    
+    # WhatsApp Cloud API
+    WHATSAPP_TOKEN: Optional[str] = None
+    WHATSAPP_PHONE_ID: Optional[str] = None
 
     model_config = {
         "env_file": ".env",
