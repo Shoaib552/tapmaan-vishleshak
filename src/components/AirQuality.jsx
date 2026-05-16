@@ -76,67 +76,67 @@ const AQI_CONFIG = [
 
 // Pollutant display config
 const POLLUTANTS = [
-  { 
-    key: "pm2_5", 
-    label: "PM2.5", 
-    unit: "µg/m³", 
-    safeLimit: 25, 
-    color: "#8b5cf6", 
+  {
+    key: "pm2_5",
+    label: "PM2.5",
+    unit: "µg/m³",
+    safeLimit: 25,
+    color: "#8b5cf6",
     desc: {
       en: "Fine particles that can enter the bloodstream.",
       hi: "महीन कण जो रक्तप्रवाह में प्रवेश कर सकते हैं।"
     }
   },
-  { 
-    key: "pm10", 
-    label: "PM10", 
-    unit: "µg/m³", 
-    safeLimit: 50, 
-    color: "#3b82f6", 
+  {
+    key: "pm10",
+    label: "PM10",
+    unit: "µg/m³",
+    safeLimit: 50,
+    color: "#3b82f6",
     desc: {
       en: "Coarse dust particles that irritate airways.",
       hi: "धूल के मोटे कण जो वायुमार्ग में जलन पैदा करते हैं।"
     }
   },
-  { 
-    key: "no2", 
-    label: "NO₂", 
-    unit: "µg/m³", 
-    safeLimit: 40, 
-    color: "#06b6d4", 
+  {
+    key: "no2",
+    label: "NO₂",
+    unit: "µg/m³",
+    safeLimit: 40,
+    color: "#06b6d4",
     desc: {
       en: "Traffic exhaust gas that exacerbates asthma.",
       hi: "ट्रैफिक निकास गैस जो अस्थमा को बढ़ाती है।"
     }
   },
-  { 
-    key: "o3", 
-    label: "O₃", 
-    unit: "µg/m³", 
-    safeLimit: 100, 
-    color: "#10b981", 
+  {
+    key: "o3",
+    label: "O₃",
+    unit: "µg/m³",
+    safeLimit: 100,
+    color: "#10b981",
     desc: {
       en: "Ground-level ozone causing respiratory issues.",
       hi: "ज़मीनी स्तर का ओज़ोन जो सांस की समस्या पैदा करता है।"
     }
   },
-  { 
-    key: "co", 
-    label: "CO", 
-    unit: "µg/m³", 
-    safeLimit: 10000, 
-    color: "#f59e0b", 
+  {
+    key: "co",
+    label: "CO",
+    unit: "µg/m³",
+    safeLimit: 10000,
+    color: "#f59e0b",
     desc: {
       en: "Gas that reduces oxygen delivery in the body.",
       hi: "गैस जो शरीर में ऑक्सीजन की आपूर्ति कम करती है।"
     }
   },
-  { 
-    key: "so2", 
-    label: "SO₂", 
-    unit: "µg/m³", 
-    safeLimit: 20, 
-    color: "#ef4444", 
+  {
+    key: "so2",
+    label: "SO₂",
+    unit: "µg/m³",
+    safeLimit: 20,
+    color: "#ef4444",
     desc: {
       en: "Gas from fossil fuels that irritates the lungs.",
       hi: "जीवाश्म ईंधन से निकलने वाली गैस जो फेफड़ों को परेशान करती है।"
@@ -266,13 +266,13 @@ const AirQuality = memo(() => {
   const components = aqiData.components;
   const usAqi = getUSAQI(components.pm2_5 || 0, components.pm10 || 0);
   const config = { ...AQI_CONFIG[aqiIndex - 1] };
-  
+
   // Translate dynamic content
   const aqiKeys = ["good", "fair", "moderate", "poor", "very_poor"];
   const currentKey = aqiKeys[aqiIndex - 1];
   config.label = t[`aqi_${currentKey}`];
   config.health = t[`aqi_health_${currentKey}`];
-  
+
   const { Icon } = config;
 
   return (

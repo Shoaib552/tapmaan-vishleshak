@@ -1,0 +1,4 @@
+[tool.pyrefly]
+python-interpreter-path = "venv/bin/python"
+search-path = ["."]
+project-includes = ["app"]
