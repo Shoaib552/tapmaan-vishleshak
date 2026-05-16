@@ -65,8 +65,8 @@ async def check_environmental_conditions():
                         "severity": "high"
                     })
                 
-                # Trigger real Heatwave alert (LOWERED TO 10 FOR TESTING)
-                if temp > 10:
+                # Trigger real Heatwave alert
+                if temp > 37:
                     alerts_triggered.append({
                         "type": "Extreme Heat Alert",
                         "location": city,

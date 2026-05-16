@@ -1,11 +1,13 @@
 import re
 import os
 import logging
+from typing import List, Dict, Any, Optional, Union
 from groq import Groq
 
 from app.rag.retriever import retriever
 from app.rag.prompts import RAG_PROMPT_TEMPLATE, SYSTEM_PROMPT, AQI_UNKNOWN_RESTRICTION
 from app.rag.rule_engine import WeatherRuleEngine
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +16,7 @@ class RAGOrchestrator:
     def __init__(self):
         self.model       = "llama-3.1-8b-instant"   # Groq free model
         self.rule_engine = WeatherRuleEngine()
-        self.client      = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        self.client      = Groq(api_key=settings.GROQ_API_KEY)
 
     # ── 1. Greeting / Casual patterns ──────────────────────────────────────
     GREETING_PATTERNS = [
@@ -160,7 +162,7 @@ class RAGOrchestrator:
             system_msg += f"\n## Knowledge Base Context\n{kb_context}"
 
         try:
-            messages = [
+            messages: Any = [
                 {"role": "system", "content": system_msg},
                 *history_messages,
                 {"role": "user",   "content": question},
@@ -169,10 +171,11 @@ class RAGOrchestrator:
             response = self.client.chat.completions.create(
                 model       = self.model,
                 messages    = messages,
-                temperature = 0.7, # Allow some natural language for general chat
+                temperature = 0.7, 
                 max_tokens  = 500,
             )
-            llm_output = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content
+            llm_output = content.strip() if content else ""
             
             return {
                 "version":       "HARDENED_RAG_V1",
@@ -198,36 +201,36 @@ class RAGOrchestrator:
             return False
         return True
 
-    def _extract_weather_values(self, weather_context: dict):
-        temp = None
-        aqi_value = None
+    def _extract_weather_values(self, weather_context: Dict[str, Any]):
+        temp: Optional[float] = None
+        aqi_value: Optional[int] = None
         temp_paths = [["current", "main", "temp"], ["main", "temp"], ["temp"]]
         for path in temp_paths:
-            val = weather_context
+            val: Any = weather_context
             for key in path:
                 if isinstance(val, dict): val = val.get(key)
                 else: val = None; break
-            if val is not None:
+            if val is not None and not isinstance(val, dict):
                 try: temp = float(val); break
                 except: continue
 
         aqi_paths = [["air_quality", "list", 0, "main", "aqi"], ["air_pollution", "list", 0, "main", "aqi"], ["aqi"]]
         for path in aqi_paths:
-            val = weather_context
+            val: Any = weather_context
             for key in path:
                 if isinstance(key, int):
                     if isinstance(val, list) and len(val) > key: val = val[key]
                     else: val = None; break
                 elif isinstance(val, dict): val = val.get(key)
                 else: val = None; break
-            if val is not None:
+            if val is not None and not isinstance(val, dict):
                 try: aqi_value = int(val); break
                 except: continue
         return temp, aqi_value
 
     def _call_llm(self, prompt: str, history_messages: list = []) -> str:
         try:
-            messages = [
+            messages: Any = [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 *history_messages,
                 {"role": "user",   "content": prompt},
@@ -235,22 +238,23 @@ class RAGOrchestrator:
             response = self.client.chat.completions.create(
                 model       = self.model,
                 messages    = messages,
-                temperature = 0.3,   # Slight warmth for natural health advice
-                max_tokens  = 900,   # Enough for rich, detailed responses
+                temperature = 0.3,
+                max_tokens  = 900,
                 seed        = 42,
             )
-            return response.choices[0].message.content.strip()
+            content = response.choices[0].message.content
+            return content.strip() if content else ""
         except Exception as e:
             logger.error("[LLM] call failed: %s", e)
             return ""
 
-    def _format_history(self, history):
-        messages = []
+    def _format_history(self, history: Optional[List[Dict[str, Any]]]) -> List[Dict[str, str]]:
+        messages: List[Dict[str, str]] = []
         if history:
             for m in history[-6:]:
-                role = m.get("role", "user")
+                role = str(m.get("role", "user"))
                 if role in ["user", "assistant"]:
-                    messages.append({"role": role, "content": m.get("content", "")})
+                    messages.append({"role": role, "content": str(m.get("content", ""))})
         return messages
 
     def _get_greeting_response(self, question: str) -> dict:

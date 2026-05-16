@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     WHATSAPP_TOKEN: Optional[str] = None
     WHATSAPP_PHONE_ID: Optional[str] = None
 
+    # Groq API
+    GROQ_API_KEY: Optional[str] = None
+
     model_config = {
         "env_file": ".env",
         "case_sensitive": True,
